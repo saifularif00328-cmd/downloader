@@ -96,6 +96,11 @@
   // idx kualitas mengacu ke Q[kind]: mp4 [360p,480p,720p,1080p,1440p,4K], mp3 [64k..320k]
   const PRESETS = [
     ['🚗 Head unit (terbukti jalan)', 'mp4', 'mpg', 1, 'MPEG-2 DVD NTSC: 720×480, 29,97 fps, video 9000 kbps, audio 448 kbps 48 kHz stereo. Setara ffmpeg -target ntsc-dvd. Cocok dengan file .mpg yang sudah terbaca di head unit kamu.'],
+    ['🚗 Head unit hemat', 'mp4', 'mpg', 1, 'MPEG-2 NTSC 720×480, 29,97 fps, video 4500 kbps, audio MP2 192 kbps 48 kHz. File ±50% lebih kecil; uji dulu di head unit.'],
+    ['🚗 Head unit PAL', 'mp4', 'mpg', 1, 'MPEG-2 PAL 720×576, 25 fps, video 8000 kbps, audio 448 kbps 48 kHz. Setara ffmpeg -target pal-dvd.'],
+    ['🚗 Head unit AVI/Xvid', 'mp4', 'avi', 1, 'AVI MPEG-4 ASP (Xvid) 640×480, 30 fps, video 1500 kbps, audio MP3 128 kbps. Kecil & kompatibel luas.'],
+    ['🚗 Head unit MP4 baseline', 'mp4', 'mp4', 1, 'MP4 H.264 baseline 640×480, video 1200 kbps, audio AAC 128 kbps. Untuk head unit yang lebih baru.'],
+    ['🎤 Karaoke / video lagu', 'mp4', 'mpg', 0, 'MPEG-2 NTSC 720×480, video 2500 kbps, audio 224 kbps — hemat ruang untuk video lagu.'],
     ['🚗 Head unit lawas (video)', 'mp4', 'avi', 1, 'AVI MPEG-4 480p. Gunakan flashdisk FAT32, nama file pendek tanpa simbol.'],
     ['🚗 Head unit lawas (audio)', 'mp3', 'mp3', 2, 'MP3 128 kbps CBR — didukung hampir semua head unit. Nama file ≤ 30 karakter.'],
     ['📼 DVD / MPEG', 'mp4', 'mpg', 1, 'MPEG 480p untuk DVD player & TV lama.'],
