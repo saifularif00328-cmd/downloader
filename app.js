@@ -95,6 +95,7 @@
   };
   // idx kualitas mengacu ke Q[kind]: mp4 [360p,480p,720p,1080p,1440p,4K], mp3 [64k..320k]
   const PRESETS = [
+    ['🚗 Head unit (terbukti jalan)', 'mp4', 'mpg', 1, 'MPEG-2 DVD NTSC: 720×480, 29,97 fps, video 9000 kbps, audio 448 kbps 48 kHz stereo. Setara ffmpeg -target ntsc-dvd. Cocok dengan file .mpg yang sudah terbaca di head unit kamu.'],
     ['🚗 Head unit lawas (video)', 'mp4', 'avi', 1, 'AVI MPEG-4 480p. Gunakan flashdisk FAT32, nama file pendek tanpa simbol.'],
     ['🚗 Head unit lawas (audio)', 'mp3', 'mp3', 2, 'MP3 128 kbps CBR — didukung hampir semua head unit. Nama file ≤ 30 karakter.'],
     ['📼 DVD / MPEG', 'mp4', 'mpg', 1, 'MPEG 480p untuk DVD player & TV lama.'],
