@@ -17,3 +17,7 @@ Nama file preset perangkat otomatis dibuat ASCII ≤ 30 karakter. Gunakan flashd
 ## Keamanan
 Server hanya listen di 127.0.0.1, hanya menerima Host lokal, tidak memakai shell, dan folder tujuan dikunci di dalam folder dasar.
 Unduh hanya konten milik Anda atau yang berizin.
+
+## Versi .exe (Windows)
+Bangun sendiri: `npm run build:exe` → `dist/NovaGrab.exe`. Atau jalankan workflow *Build NovaGrab.exe* di tab Actions.
+Letakkan `yt-dlp.exe` (dan `ffmpeg.exe` bila belum ada di PATH) di folder yang sama dengan `NovaGrab.exe`, lalu klik dua kali. Browser terbuka otomatis; tutup jendela hitam untuk berhenti.

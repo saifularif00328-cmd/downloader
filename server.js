@@ -11,6 +11,10 @@ const { spawn, spawnSync } = require('child_process');
 const PORT = +process.env.PORT || 8787;
 const BASE = path.resolve(process.env.NOVAGRAB_DIR || path.join(os.homedir(), 'Downloads', 'NovaGrab'));
 const WEB = __dirname;
+const IS_EXE = !!process.pkg;
+// Saat jadi .exe: cari yt-dlp.exe / ffmpeg.exe di folder yang sama dengan exe (lebih dulu daripada PATH)
+const EXE_DIR = IS_EXE ? path.dirname(process.execPath) : null;
+if (EXE_DIR) process.env.PATH = [EXE_DIR, path.join(EXE_DIR, 'bin'), process.env.PATH].join(path.delimiter);
 const HEIGHTS = [360, 480, 720, 1080, 1440, 2160];
 const ABR = [64, 96, 128, 192, 256, 320];
 
@@ -222,8 +226,23 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(res);
   } catch (e) { send(res, 500, { error: e.message }); }
 });
+server.on('error', e => {
+  if (e.code === 'EADDRINUSE') { console.error(`Port ${PORT} sudah dipakai. NovaGrab mungkin sudah berjalan: buka http://127.0.0.1:${PORT}`); if (process.platform === 'win32' && IS_EXE) openBrowser(); }
+  else console.error(e.message);
+  if (IS_EXE) setTimeout(() => process.exit(1), 8000);
+});
+function openBrowser() {
+  if (process.env.NOVAGRAB_NO_OPEN) return;
+  const url = `http://127.0.0.1:${PORT}`;
+  try {
+    if (process.platform === 'win32') spawn('cmd', ['/c', 'start', '', url], { stdio: 'ignore', detached: true, windowsHide: true }).unref();
+    else if (process.platform === 'darwin') spawn('open', [url], { stdio: 'ignore', detached: true }).unref();
+  } catch {}
+}
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`NovaGrab → http://127.0.0.1:${PORT}\nSimpan ke: ${BASE}`);
-  if (!HAS.ytdlp) console.warn('! yt-dlp tidak ditemukan di PATH'); if (!HAS.ffmpeg) console.warn('! ffmpeg tidak ditemukan di PATH');
+  console.log(`NovaGrab → http://127.0.0.1:${PORT}\nSimpan ke: ${BASE}\nTutup jendela ini untuk menghentikan NovaGrab.`);
+  if (!HAS.ytdlp) console.warn('! yt-dlp tidak ditemukan (taruh yt-dlp.exe di folder yang sama dengan NovaGrab.exe, atau pasang ke PATH)');
+  if (!HAS.ffmpeg) console.warn('! ffmpeg tidak ditemukan (taruh ffmpeg.exe di folder yang sama dengan NovaGrab.exe, atau pasang ke PATH)');
+  if (IS_EXE) openBrowser();
 });
 process.on('SIGINT', () => { jobs.forEach(j => j.proc && j.proc.kill()); process.exit(0); });

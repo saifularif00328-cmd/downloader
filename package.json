@@ -1,1 +1,1 @@
-{ "name": "novagrab", "version": "0.2.0", "private": true, "description": "Bulk video/audio downloader (yt-dlp + ffmpeg)", "scripts": { "start": "node server.js" }, "engines": { "node": ">=18" } }
+{ "name": "novagrab", "version": "0.2.0", "private": true, "description": "Bulk video/audio downloader (yt-dlp + ffmpeg)", "bin": "server.js", "scripts": { "start": "node server.js", "build:exe": "npx @yao-pkg/pkg . --targets node22-win-x64 --output dist/NovaGrab.exe" }, "pkg": { "assets": ["index.html", "styles.css", "app.js"] }, "engines": { "node": ">=18" } }
