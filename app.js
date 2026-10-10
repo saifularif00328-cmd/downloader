@@ -89,15 +89,43 @@
   /* ---------- format & quality ---------- */
   const Q = { mp4: ['360p', '480p', '720p', '1080p', '1440p', '4K'], mp3: ['64k', '96k', '128k', '192k', '256k', '320k'] };
   let fmt = 'mp4';
+  const EXT = {
+    mp4: [['mp4', 'MP4 (H.264) — universal'], ['mkv', 'MKV'], ['webm', 'WebM'], ['avi', 'AVI (MPEG-4) — perangkat lawas'], ['mpg', 'MPEG-1/2 — DVD player & head unit'], ['wmv', 'WMV'], ['3gp', '3GP — HP jadul'], ['flv', 'FLV']],
+    mp3: [['mp3', 'MP3 — paling kompatibel'], ['m4a', 'M4A / AAC'], ['wma', 'WMA — head unit lawas'], ['wav', 'WAV (lossless)'], ['flac', 'FLAC (lossless)'], ['ogg', 'OGG Vorbis'], ['opus', 'Opus']]
+  };
+  // idx kualitas mengacu ke Q[kind]: mp4 [360p,480p,720p,1080p,1440p,4K], mp3 [64k..320k]
+  const PRESETS = [
+    ['🚗 Head unit lawas (video)', 'mp4', 'avi', 1, 'AVI MPEG-4 480p. Gunakan flashdisk FAT32, nama file pendek tanpa simbol.'],
+    ['🚗 Head unit lawas (audio)', 'mp3', 'mp3', 2, 'MP3 128 kbps CBR — didukung hampir semua head unit. Nama file ≤ 30 karakter.'],
+    ['📼 DVD / MPEG', 'mp4', 'mpg', 1, 'MPEG 480p untuk DVD player & TV lama.'],
+    ['📱 HP jadul', 'mp4', '3gp', 0, '3GP 360p, ukuran kecil.'],
+    ['📺 Smart TV', 'mp4', 'mp4', 3, 'MP4 H.264 1080p.'],
+    ['🎵 Audio hi-fi', 'mp3', 'flac', 5, 'FLAC lossless, ukuran besar.']
+  ];
+  let ext = 'mp4';
+  function renderExt() {
+    $('#ext').innerHTML = EXT[fmt].map(e => `<option value="${e[0]}">${e[1]}</option>`).join('');
+    $('#ext').value = ext; $('#extHint').textContent = '.' + ext;
+  }
+  $('#ext').onchange = e => { ext = e.target.value; $('#extHint').textContent = '.' + ext; clearPreset(); };
+  function clearPreset() { $$('#presets button').forEach(b => b.classList.remove('active')); $('#presetNote').textContent = ''; }
+  $('#presets').innerHTML = PRESETS.map((p, i) => `<button data-i="${i}">${p[0]}</button>`).join('');
+  $('#presets').onclick = e => {
+    const b = e.target.closest('button'); if (!b) return; const p = PRESETS[b.dataset.i];
+    fmt = p[1]; ext = p[2];
+    $$('#fmtSeg button').forEach(x => x.classList.toggle('active', x.dataset.fmt === fmt));
+    $('#qRange').value = p[3]; renderQ(); renderExt();
+    $$('#presets button').forEach(x => x.classList.toggle('active', x === b)); $('#presetNote').textContent = p[4];
+  };
   function renderQ() {
     $('#ticks').innerHTML = Q[fmt].map(q => `<span>${q}</span>`).join('');
     $('#qLabel').textContent = Q[fmt][$('#qRange').value];
   }
   $$('#fmtSeg button').forEach(b => b.onclick = () => {
-    fmt = b.dataset.fmt; $$('#fmtSeg button').forEach(x => x.classList.toggle('active', x === b));
-    $('#qRange').value = fmt === 'mp4' ? 3 : 4; renderQ();
+    fmt = b.dataset.fmt; ext = EXT[fmt][0][0]; $$('#fmtSeg button').forEach(x => x.classList.toggle('active', x === b));
+    $('#qRange').value = fmt === 'mp4' ? 3 : 4; renderQ(); renderExt(); clearPreset();
   });
-  $('#qRange').oninput = renderQ; renderQ();
+  $('#qRange').oninput = () => { renderQ(); clearPreset(); }; renderQ(); renderExt();
   $('#par').oninput = e => $('#parLabel').textContent = e.target.value;
   $('#spd').oninput = e => $('#spdLabel').textContent = e.target.value == 0 ? 'Tanpa batas' : e.target.value + ' MB/s';
 
@@ -109,7 +137,7 @@
   function addItems(items) {
     items.forEach(it => {
       const h = HUES[uid % HUES.length];
-      queue.push({ id: ++uid, title: it.title || 'Video ' + uid + ' — ' + it.name, name: it.name, color: it.color, fmt, q: Q[fmt][$('#qRange').value],
+      queue.push({ id: ++uid, title: it.title || 'Video ' + uid + ' — ' + it.name, name: it.name, color: it.color, fmt, ext, q: Q[fmt][$('#qRange').value],
         size: 8 + Math.random() * 180, pct: 0, speed: 0, status: 'wait', h1: h[0], h2: h[1], num: $('#optNum').checked ? uid : null });
     });
     renderQueue();
@@ -128,7 +156,7 @@
       return `<article class="glass item ${i.status === 'run' ? '' : i.status}" data-id="${i.id}">
         <div class="thumb" style="--h1:${i.h1};--h2:${i.h2}">${i.fmt === 'mp3' ? '♪' : '▶'}</div>
         <div class="meta"><h4>${i.num ? String(i.num).padStart(2, '0') + ' · ' : ''}${esc(i.title)}</h4>
-          <div class="sub"><span class="badge">${i.fmt.toUpperCase()} ${i.q}</span><span>${i.name}</span><span>${fmtSize(i.size * i.pct / 100)} / ${fmtSize(i.size)}</span><span>${label}</span></div>
+          <div class="sub"><span class="badge">${(i.ext || i.fmt).toUpperCase()} ${i.q}</span><span>${i.name}</span><span>${fmtSize(i.size * i.pct / 100)} / ${fmtSize(i.size)}</span><span>${label}</span></div>
           <div class="meter"><i style="width:${i.pct}%"></i></div></div>
         <div class="acts">
           ${i.status === 'error' ? '<button data-a="retry" title="Coba lagi">↻</button>' : ''}
@@ -163,7 +191,7 @@
       i.speed = 2 + Math.random() * 6; i.pct = Math.min(100, i.pct + i.speed / i.size * 100 * .6);
       if (i.pct >= 100) {
         if (Math.random() < .08) { i.status = 'error'; i.pct = 62; }
-        else { i.status = 'done'; i.speed = 0; history.unshift({ title: i.title, name: i.name, fmt: i.fmt, q: i.q, size: i.size, at: new Date().toISOString(), h1: i.h1, h2: i.h2 }); history = history.slice(0, 200); store.set('history', history); renderHistory(); }
+        else { i.status = 'done'; i.speed = 0; history.unshift({ title: i.title, name: i.name, fmt: i.fmt, ext: i.ext, q: i.q, size: i.size, at: new Date().toISOString(), h1: i.h1, h2: i.h2 }); history = history.slice(0, 200); store.set('history', history); renderHistory(); }
       }
     });
     if (queue.some(i => i.status === 'run')) renderQueue();
@@ -176,7 +204,7 @@
     $('#histEmpty').hidden = list.length > 0;
     $('#histList').innerHTML = list.map(h => `<article class="glass item done">
       <div class="thumb" style="--h1:${h.h1};--h2:${h.h2}">${h.fmt === 'mp3' ? '♪' : '▶'}</div>
-      <div class="meta"><h4>${esc(h.title)}</h4><div class="sub"><span class="badge">${h.fmt.toUpperCase()} ${h.q}</span><span>${h.name}</span><span>${fmtSize(h.size)}</span><span>${new Date(h.at).toLocaleString('id-ID')}</span></div></div>
+      <div class="meta"><h4>${esc(h.title)}</h4><div class="sub"><span class="badge">${(h.ext || h.fmt).toUpperCase()} ${h.q}</span><span>${h.name}</span><span>${fmtSize(h.size)}</span><span>${new Date(h.at).toLocaleString('id-ID')}</span></div></div>
       <div class="acts"><button title="Unduh ulang" data-re="${esc(h.title)}">↻</button></div></article>`).join('');
   }
   $('#hSearch').oninput = renderHistory;

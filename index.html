@@ -72,6 +72,13 @@
         <button class="active" data-fmt="mp4">🎬 Video MP4</button>
         <button data-fmt="mp3">🎧 Audio MP3</button>
       </div>
+      <label class="field"><span>Ekstensi file <b id="extHint"></b></span>
+        <select id="ext" class="sel"></select>
+      </label>
+      <div class="field"><span>Preset perangkat</span>
+        <div class="presets" id="presets"></div>
+        <small class="muted" id="presetNote"></small>
+      </div>
       <label class="field"><span>Kualitas <b id="qLabel">1080p</b></span>
         <input type="range" id="qRange" min="0" max="5" value="3">
         <div class="ticks" id="ticks"></div>
