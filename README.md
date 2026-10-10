@@ -1,4 +1,4 @@
-# NovaGrab
+# Downloader Josjis by Digitalku
 
 Bulk downloader (YouTube, TikTok, Facebook, dll via yt-dlp) dengan konversi ffmpeg.
 
@@ -6,7 +6,7 @@ Bulk downloader (YouTube, TikTok, Facebook, dll via yt-dlp) dengan konversi ffmp
 1. Pasang [Node.js](https://nodejs.org) ≥ 18, [yt-dlp](https://github.com/yt-dlp/yt-dlp) dan [ffmpeg](https://ffmpeg.org) (harus ada di PATH).
    - Windows: `winget install yt-dlp.yt-dlp Gyan.FFmpeg`
 2. `node server.js` lalu buka http://127.0.0.1:8787
-3. File tersimpan di `~/Downloads/NovaGrab` (ubah dengan env `NOVAGRAB_DIR`).
+3. File tersimpan di `~/Downloads/Josjis` (ubah dengan env `JOSJIS_DIR`).
 
 Tanpa backend, `index.html` tetap bisa dibuka sebagai demo UI (data simulasi).
 
@@ -19,5 +19,5 @@ Server hanya listen di 127.0.0.1, hanya menerima Host lokal, tidak memakai shell
 Unduh hanya konten milik Anda atau yang berizin.
 
 ## Versi .exe (Windows)
-Bangun sendiri: `npm run build:exe` → `dist/NovaGrab.exe`. Atau jalankan workflow *Build NovaGrab.exe* di tab Actions.
-Letakkan `yt-dlp.exe` (dan `ffmpeg.exe` bila belum ada di PATH) di folder yang sama dengan `NovaGrab.exe`, lalu klik dua kali. Browser terbuka otomatis; tutup jendela hitam untuk berhenti.
+Bangun sendiri: `npm run build:exe` → `dist/Downloader-Josjis.exe`. Atau jalankan workflow *Build Downloader-Josjis.exe* di tab Actions.
+Letakkan `yt-dlp.exe` (dan `ffmpeg.exe` bila belum ada di PATH) di folder yang sama dengan `Downloader-Josjis.exe`, lalu klik dua kali. Browser terbuka otomatis; tutup jendela hitam untuk berhenti.

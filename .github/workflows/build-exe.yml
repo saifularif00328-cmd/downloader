@@ -1,4 +1,4 @@
-name: Build NovaGrab.exe
+name: Build Downloader-Josjis.exe
 on:
   workflow_dispatch:
   push:
@@ -12,12 +12,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
-      - run: npx --yes @yao-pkg/pkg . --targets node22-win-x64 --output dist/NovaGrab.exe
+      - run: npx --yes @yao-pkg/pkg . --targets node22-win-x64 --output dist/Downloader-Josjis.exe
       - name: Bundle yt-dlp.exe
         run: curl -fsSL -o dist/yt-dlp.exe https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe
-      - run: cd dist && zip NovaGrab-win64.zip NovaGrab.exe yt-dlp.exe
+      - run: cd dist && zip Josjis-win64.zip Downloader-Josjis.exe yt-dlp.exe
       - uses: actions/upload-artifact@v4
-        with: { name: NovaGrab-win64, path: dist/NovaGrab-win64.zip }
+        with: { name: Josjis-win64, path: dist/Josjis-win64.zip }
       - if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
-        with: { files: dist/NovaGrab-win64.zip }
+        with: { files: dist/Josjis-win64.zip }

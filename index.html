@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NovaGrab — Bulk Video Downloader</title>
+<title>Downloader Josjis by Digitalku</title>
+<link rel="icon" type="image/svg+xml" href="logo.svg">
 <meta name="description" content="Unduh banyak video & audio sekaligus dari YouTube, TikTok, Facebook, dan lainnya.">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -12,8 +13,8 @@
 
 <header class="topbar glass">
   <a class="brand" href="#">
-    <span class="logo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-5-5m5 5l5-5M5 21h14"/></svg></span>
-    <b>Nova<span>Grab</span></b>
+    <img class="logo" src="logo.svg" alt="" width="40" height="40">
+    <b><i style="font-style:normal">Downloader <span>Josjis</span></i><small>by Digitalku</small></b>
   </a>
   <nav class="tabs" role="tablist">
     <button class="tab active" data-tab="download" role="tab">Unduh</button>
@@ -87,7 +88,7 @@
       <label class="switch"><input type="checkbox" id="optThumb" checked><i></i><span>Sematkan thumbnail &amp; metadata</span></label>
       <label class="switch"><input type="checkbox" id="optNum"><i></i><span>Beri nomor urut pada nama file</span></label>
       <label class="field"><span>Folder tujuan</span>
-        <div class="path"><span>📁</span><input id="dest" value="Downloads/NovaGrab"><button class="btn ghost sm">Ubah</button></div>
+        <div class="path"><span>📁</span><input id="dest" value="Downloads/Josjis"><button class="btn ghost sm">Ubah</button></div>
       </label>
       <button class="btn primary big" id="startBtn"><span>Mulai Unduh</span><em id="startCount">0 link</em></button>
     </div>
@@ -145,7 +146,7 @@
 </main>
 
 <div class="toasts" id="toasts" aria-live="polite"></div>
-<footer>NovaGrab · Tahap 1: prototipe UI/UX (data simulasi). *Dukungan situs bergantung pada backend. Hanya unduh konten milik Anda atau yang berizin.</footer>
+<footer>Downloader Josjis by Digitalku · Tahap 1: prototipe UI/UX (data simulasi). *Dukungan situs bergantung pada backend. Hanya unduh konten milik Anda atau yang berizin.</footer>
 <script src="app.js"></script>
 </body>
 </html>

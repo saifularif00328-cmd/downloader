@@ -144,7 +144,7 @@
   const fmtSize = n => n.toFixed(1) + ' MB';
 
   let API = false, evt = null;
-  const clientOpts = () => ({ fmt, ext, q: +$('#qRange').value, qLabel: Q[fmt][$('#qRange').value], preset: presetId, dest: $('#dest').value.replace(/^Downloads\/NovaGrab\/?/, ''),
+  const clientOpts = () => ({ fmt, ext, q: +$('#qRange').value, qLabel: Q[fmt][$('#qRange').value], preset: presetId, dest: $('#dest').value.replace(/^Downloads\/Josjis\/?/, ''),
     sub: $('#optSub').checked, meta: $('#optThumb').checked, number: $('#optNum').checked });
   const post = (url, data = {}) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
   function addItems(items) {
@@ -271,8 +271,8 @@
   fetch('/api/health').then(r => r.json()).then(h => {
     if (!h.ok) return; API = true;
     if (!h.ytdlp || !h.ffmpeg) toast('Backend aktif, tapi ' + [!h.ytdlp && 'yt-dlp', !h.ffmpeg && 'ffmpeg'].filter(Boolean).join(' & ') + ' belum terpasang');
-    $('#dest').value = 'Downloads/NovaGrab'; $('#dest').title = 'Folder dasar: ' + h.base + ' (isi subfolder opsional setelah Downloads/NovaGrab/)';
-    $('footer').textContent = 'NovaGrab · Backend aktif — file disimpan di ' + h.base + '. Hanya unduh konten milik Anda atau yang berizin.';
+    $('#dest').value = 'Downloads/Josjis'; $('#dest').title = 'Folder dasar: ' + h.base + ' (isi subfolder opsional setelah Downloads/Josjis/)';
+    $('footer').textContent = 'Downloader Josjis by Digitalku · Backend aktif — file disimpan di ' + h.base + '. Hanya unduh konten milik Anda atau yang berizin.';
     $('#conv').value = h.convert || 1; $('#convLabel').textContent = $('#conv').value;
     post('/api/settings', { parallel: +$('#par').value });
     evt = new EventSource('/api/events'); evt.onmessage = e => onJobs(JSON.parse(e.data));
