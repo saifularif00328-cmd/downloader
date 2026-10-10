@@ -196,3 +196,21 @@ footer{text-align:center;color:var(--muted);font-size:.75rem;padding:0 16px 28px
 .brand b{display:flex;flex-direction:column;line-height:1.1}
 .brand b small{font-size:.62rem;font-weight:600;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
 .brand b{white-space:nowrap}.brand b>span{display:inline}
+
+/* ===== Mode ringan: tanpa blur/animasi/3D, untuk HP ===== */
+.lite .bg .orb,.lite .bg .grid,.lite .scene,.lite .stats,.lite .pill{display:none}
+.lite .glass{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--bg2);box-shadow:none}
+.lite *,.lite *::before,.lite *::after{animation:none!important;transition:none!important}
+.lite .hero{grid-template-columns:1fr;padding:6px 4px 14px}
+.lite h1{font-size:1.7rem;margin:4px 0 8px}
+.lite .hero p{font-size:.9rem}
+.lite .topbar{top:6px;margin-top:6px}
+.lite .logo,.lite .icon-btn:hover{filter:none;box-shadow:none;transform:none}
+.lite .btn.primary,.lite .btn.secondary,.lite .btn.ghost,.lite .tab.active,.lite .seg button.active,.lite .presets button,.lite .acts button{box-shadow:none}
+.lite .btn:active{transform:none;filter:brightness(.85)}
+.lite .meter{box-shadow:none}.lite .meter i{box-shadow:none}.lite .meter i::after{display:none}
+.lite .item:hover{transform:none}
+.lite .card{padding:16px}
+.lite .tag i,.lite .toast{box-shadow:none}
+.lite textarea:focus,.lite input:focus-visible{box-shadow:none}
+.android .drop{display:none}

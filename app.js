@@ -19,6 +19,10 @@
   $$('#themeSeg button').forEach(b => b.onclick = () => { themePref = b.dataset.t; store.set('theme', themePref); applyTheme(); });
   const setAccent = a => { root.dataset.accent = a; $$('#accents button').forEach(b => b.classList.toggle('active', b.dataset.a === a)); store.set('accent', a); };
   $$('#accents button').forEach(b => b.onclick = () => setAccent(b.dataset.a));
+  let lite = store.get('lite', !!window.AndroidBridge || matchMedia('(max-width:860px)').matches);
+  const applyLite = () => { root.classList.toggle('lite', lite); $('#optLite').checked = lite; };
+  $('#optLite').onchange = e => { lite = e.target.checked; store.set('lite', lite); applyLite(); };
+  applyLite();
   applyTheme(); setAccent(store.get('accent', 'violet'));
 
   /* ---------- tabs ---------- */
