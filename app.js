@@ -133,12 +133,14 @@
     $('#qRange').value = fmt === 'mp4' ? 3 : 4; renderQ(); renderExt(); clearPreset();
   });
   $('#qRange').oninput = () => { renderQ(); clearPreset(); }; renderQ(); renderExt();
+  $('#conv').oninput = e => { $('#convLabel').textContent = e.target.value; if (API) post('/api/settings', { convert: +e.target.value }); };
   $('#par').oninput = e => { $('#parLabel').textContent = e.target.value; if (API) post('/api/settings', { parallel: +e.target.value }); };
   $('#spd').oninput = e => $('#spdLabel').textContent = e.target.value == 0 ? 'Tanpa batas' : e.target.value + ' MB/s';
 
   /* ---------- queue (simulation) ---------- */
   const HUES = [['#8b5cf6', '#06b6d4'], ['#ec4899', '#f97316'], ['#10b981', '#3b82f6'], ['#f43f5e', '#8b5cf6'], ['#f59e0b', '#ef4444']];
   let queue = [], history = store.get('history', []), uid = 0, allPaused = false;
+  const fmtT = s => s >= 60 ? Math.floor(s / 60) + 'm ' + String(s % 60).padStart(2, '0') + 's' : s + 's';
   const fmtSize = n => n.toFixed(1) + ' MB';
 
   let API = false, evt = null;
@@ -164,7 +166,7 @@
     $('#qBadge').textContent = queue.filter(i => i.status !== 'done').length;
     $('#queueEmpty').hidden = queue.length > 0;
     $('#queueList').innerHTML = queue.map(i => {
-      const label = { wait: 'Menunggu', run: i.stage === 'convert' ? 'Mengonversi…' : i.stage === 'info' ? 'Mengambil info…' : `${i.speed.toFixed(1)} MB/s · ETA ${i.eta ?? Math.max(1, Math.round((100 - i.pct) / 100 * i.size / Math.max(i.speed, .1)))}s`, paused: 'Dijeda', done: 'Selesai', error: 'Gagal' + (i.error ? ': ' + esc(i.error).slice(0, 90) : '') }[i.status];
+      const label = { wait: 'Menunggu', run: i.stage === 'cwait' ? 'Menunggu giliran konversi…' : i.stage === 'convert' ? `Mengonversi ${Math.round((i.pct - 30) / 70 * 100)}%${i.cspeed ? ' · ' + i.cspeed + 'x' : ''}${i.eta ? ' · ETA ' + fmtT(i.eta) : ''}` : i.stage === 'info' ? 'Mengambil info…' : `${i.speed.toFixed(1)} MB/s · ETA ${i.eta ?? Math.max(1, Math.round((100 - i.pct) / 100 * i.size / Math.max(i.speed, .1)))}s`, paused: 'Dijeda', done: 'Selesai', error: 'Gagal' + (i.error ? ': ' + esc(i.error).slice(0, 90) : '') }[i.status];
       return `<article class="glass item ${i.status === 'run' ? '' : i.status}" data-id="${i.id}">
         <div class="thumb" style="--h1:${i.h1};--h2:${i.h2}">${i.fmt === 'mp3' ? '♪' : '▶'}</div>
         <div class="meta"><h4>${i.num ? String(i.num).padStart(2, '0') + ' · ' : ''}${esc(i.title)}</h4>
@@ -262,7 +264,7 @@
   const seenDone = new Set();
   function onJobs(list) {
     queue = list.map(v => { const h = HUES[v.id % HUES.length]; return { id: v.id, title: v.title || v.url, name: v.site, fmt: v.fmt, ext: v.ext, q: v.q, size: v.size || 0, pct: v.pct, speed: v.speed, eta: v.eta,
-      status: { wait: 'wait', run: 'run', paused: 'paused', done: 'done', error: 'error' }[v.status], stage: v.status === 'run' ? (v.pct >= 70 ? 'convert' : v.pct > 0 || v.size ? 'download' : 'info') : '', error: v.error, num: v.num, h1: h[0], h2: h[1] }; });
+      status: { wait: 'wait', run: 'run', paused: 'paused', done: 'done', error: 'error' }[v.status], stage: v.stage, cspeed: v.cspeed, error: v.error, num: v.num, h1: h[0], h2: h[1] }; });
     queue.forEach(i => { if (i.status === 'done' && !seenDone.has(i.id)) { seenDone.add(i.id); history.unshift({ title: i.title, name: i.name, fmt: i.fmt, ext: i.ext, q: i.q, size: i.size, at: new Date().toISOString(), h1: i.h1, h2: i.h2 }); history = history.slice(0, 200); store.set('history', history); renderHistory(); } });
     renderQueue();
   }
@@ -271,6 +273,7 @@
     if (!h.ytdlp || !h.ffmpeg) toast('Backend aktif, tapi ' + [!h.ytdlp && 'yt-dlp', !h.ffmpeg && 'ffmpeg'].filter(Boolean).join(' & ') + ' belum terpasang');
     $('#dest').value = 'Downloads/NovaGrab'; $('#dest').title = 'Folder dasar: ' + h.base + ' (isi subfolder opsional setelah Downloads/NovaGrab/)';
     $('footer').textContent = 'NovaGrab · Backend aktif — file disimpan di ' + h.base + '. Hanya unduh konten milik Anda atau yang berizin.';
+    $('#conv').value = h.convert || 1; $('#convLabel').textContent = $('#conv').value;
     post('/api/settings', { parallel: +$('#par').value });
     evt = new EventSource('/api/events'); evt.onmessage = e => onJobs(JSON.parse(e.data));
   }).catch(() => {});

@@ -77,15 +77,18 @@ const runJson = (args) => new Promise((ok, no) => {
 });
 
 /* ---------- jobs ---------- */
-const jobs = new Map(); let nextId = 1; let parallel = 3, retries = 1;
+const jobs = new Map(); let nextId = 1; let parallel = 3, retries = 1, convLimit = Math.max(1, Math.floor(os.cpus().length / 2));
 const clients = new Set();
-const view = j => ({ id: j.id, url: j.url, title: j.title, site: j.site, fmt: j.fmt, ext: j.outExt || j.ext, q: j.qLabel, status: j.status, pct: j.pct, speed: j.speed, eta: j.eta, size: j.size, file: j.file, error: j.error, num: j.num });
+const view = j => ({ id: j.id, url: j.url, title: j.title, site: j.site, fmt: j.fmt, ext: j.outExt || j.ext, q: j.qLabel, status: j.status, pct: j.pct, stage: j.status === 'run' ? j.stage : '', cspeed: j.cspeed || 0, speed: j.speed, eta: j.eta, size: j.size, file: j.file, error: j.error, num: j.num });
 let pending = false;
 function push() { if (pending) return; pending = true; setTimeout(() => { pending = false; const d = `data: ${JSON.stringify([...jobs.values()].map(view))}\n\n`; clients.forEach(r => r.write(d)); }, 150); }
 
 function pump() {
-  let running = [...jobs.values()].filter(j => j.status === 'run').length;
-  for (const j of jobs.values()) if (j.status === 'wait' && running < parallel) { running++; start(j); }
+  const all = [...jobs.values()];
+  let running = all.filter(j => j.status === 'run' && (j.stage === 'info' || j.stage === 'download')).length;
+  for (const j of all) if (j.status === 'wait' && running < parallel) { running++; start(j); }
+  let converting = all.filter(j => j.status === 'run' && j.stage === 'convert').length;
+  for (const j of all) if (j.status === 'run' && j.stage === 'cwait' && converting < convLimit) { converting++; convert(j); }
   push();
 }
 function fail(j, msg) { if (j.status === 'cancel') return; j.status = 'error'; j.error = msg; j.speed = 0; pump(); }
@@ -120,7 +123,7 @@ function download(j) {
     buf += d; const lines = buf.split('\n'); buf = lines.pop();
     for (const l of lines) if (l.startsWith('NG|')) {
       const [, dl, tot, est, sp, eta] = l.split('|'); const total = +tot || +est || 0;
-      if (total) { j.pct = Math.min(70, (+dl / total) * 70); j.size = total / 1048576; }
+      if (total) { j.pct = Math.min(30, (+dl / total) * 30); j.size = total / 1048576; }
       j.speed = +sp / 1048576 || 0; j.eta = +eta || 0; push();
     }
   });
@@ -129,7 +132,7 @@ function download(j) {
   c.on('close', code => {
     j.proc = null; if (j.status !== 'run') return;
     if (code !== 0) return retryOrFail(j, err.split('\n').filter(l => l.includes('ERROR')).pop() || 'Unduhan gagal');
-    convert(j);
+    j.stage = 'cwait'; j.speed = 0; j.eta = 0; pump();
   });
 }
 
@@ -144,12 +147,13 @@ function convert(j) {
   const args = ['-y', '-hide_banner', '-loglevel', 'error', '-progress', 'pipe:1', '-nostats', '-i', path.join(tmp, src), ...prof.args];
   if (j.opts.meta) args.push('-metadata', `title=${j.title}`);
   args.push(out);
-  j.stage = 'convert'; j.speed = 0; j.eta = 0; push();
+  j.stage = 'convert'; j.speed = 0; j.eta = 0; j.cspeed = 0; j.pct = 30; push();
   const c = spawn('ffmpeg', args, { windowsHide: true }); j.proc = c; let err = '';
   c.stdout.on('data', d => {
     const m = /out_time_(?:us|ms)=(\d+)/g; let x, last;
     while ((x = m.exec(d))) last = +x[1];
-    if (last != null && j.dur) { j.pct = 70 + Math.min(29.5, (last / 1e6 / j.dur) * 30); push(); }
+    const sp = /speed=\s*([\d.]+)x/.exec(d); if (sp) j.cspeed = +sp[1];
+    if (last != null && j.dur) { const cur = last / 1e6; j.pct = 30 + Math.min(69.5, (cur / j.dur) * 70); j.eta = j.cspeed ? Math.max(0, Math.round((j.dur - cur) / j.cspeed)) : 0; push(); }
   });
   c.stderr.on('data', d => err += d);
   c.on('error', e => fail(j, e.message));
@@ -172,7 +176,7 @@ const server = http.createServer(async (req, res) => {
   // basic CSRF/DNS-rebinding guard: only accept local Host header
   if (!/^(127\.0\.0\.1|localhost)(:\d+)?$/.test(req.headers.host || '')) { res.writeHead(403); return res.end(); }
   try {
-    if (p === '/api/health') return send(res, 200, { ok: true, ...HAS, base: BASE, parallel });
+    if (p === '/api/health') return send(res, 200, { ok: true, ...HAS, base: BASE, parallel, convert: convLimit });
     if (p === '/api/events') {
       res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
       clients.add(res); req.on('close', () => clients.delete(res));
@@ -199,8 +203,8 @@ const server = http.createServer(async (req, res) => {
       pump(); return send(res, 200, { ids });
     }
     if (p === '/api/settings' && req.method === 'POST') {
-      const b = await body(req); if (b.parallel) parallel = Math.max(1, Math.min(8, +b.parallel)); if ('retry' in b) retries = b.retry ? 1 : 0;
-      pump(); return send(res, 200, { parallel });
+      const b = await body(req); if (b.parallel) parallel = Math.max(1, Math.min(8, +b.parallel)); if (b.convert) convLimit = Math.max(1, Math.min(4, +b.convert)); if ('retry' in b) retries = b.retry ? 1 : 0;
+      pump(); return send(res, 200, { parallel, convert: convLimit });
     }
     if (p === '/api/clear-done' && req.method === 'POST') { for (const [k, j] of jobs) if (j.status === 'done') jobs.delete(k); push(); return send(res, 200, {}); }
     const m = /^\/api\/jobs\/(\d+)\/(pause|resume|cancel|retry)$/.exec(p);
