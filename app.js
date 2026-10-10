@@ -108,17 +108,18 @@
     ['📺 Smart TV', 'mp4', 'mp4', 3, 'MP4 H.264 1080p.'],
     ['🎵 Audio hi-fi', 'mp3', 'flac', 5, 'FLAC lossless, ukuran besar.']
   ];
-  let ext = 'mp4';
+  const PRESET_IDS = ['hu-proven', 'hu-eco', 'hu-pal', 'hu-xvid', 'hu-mp4', 'karaoke', 'hu-avi', 'hu-mp3', 'dvd', 'phone', 'tv', 'hifi'];
+  let ext = 'mp4', presetId = '';
   function renderExt() {
     $('#ext').innerHTML = EXT[fmt].map(e => `<option value="${e[0]}">${e[1]}</option>`).join('');
     $('#ext').value = ext; $('#extHint').textContent = '.' + ext;
   }
   $('#ext').onchange = e => { ext = e.target.value; $('#extHint').textContent = '.' + ext; clearPreset(); };
-  function clearPreset() { $$('#presets button').forEach(b => b.classList.remove('active')); $('#presetNote').textContent = ''; }
+  function clearPreset() { presetId = ''; $$('#presets button').forEach(b => b.classList.remove('active')); $('#presetNote').textContent = ''; }
   $('#presets').innerHTML = PRESETS.map((p, i) => `<button data-i="${i}">${p[0]}</button>`).join('');
   $('#presets').onclick = e => {
     const b = e.target.closest('button'); if (!b) return; const p = PRESETS[b.dataset.i];
-    fmt = p[1]; ext = p[2];
+    fmt = p[1]; ext = p[2]; presetId = PRESET_IDS[b.dataset.i];
     $$('#fmtSeg button').forEach(x => x.classList.toggle('active', x.dataset.fmt === fmt));
     $('#qRange').value = p[3]; renderQ(); renderExt();
     $$('#presets button').forEach(x => x.classList.toggle('active', x === b)); $('#presetNote').textContent = p[4];
@@ -132,7 +133,7 @@
     $('#qRange').value = fmt === 'mp4' ? 3 : 4; renderQ(); renderExt(); clearPreset();
   });
   $('#qRange').oninput = () => { renderQ(); clearPreset(); }; renderQ(); renderExt();
-  $('#par').oninput = e => $('#parLabel').textContent = e.target.value;
+  $('#par').oninput = e => { $('#parLabel').textContent = e.target.value; if (API) post('/api/settings', { parallel: +e.target.value }); };
   $('#spd').oninput = e => $('#spdLabel').textContent = e.target.value == 0 ? 'Tanpa batas' : e.target.value + ' MB/s';
 
   /* ---------- queue (simulation) ---------- */
@@ -140,7 +141,12 @@
   let queue = [], history = store.get('history', []), uid = 0, allPaused = false;
   const fmtSize = n => n.toFixed(1) + ' MB';
 
+  let API = false, evt = null;
+  const clientOpts = () => ({ fmt, ext, q: +$('#qRange').value, qLabel: Q[fmt][$('#qRange').value], preset: presetId, dest: $('#dest').value.replace(/^Downloads\/NovaGrab\/?/, ''),
+    sub: $('#optSub').checked, meta: $('#optThumb').checked, number: $('#optNum').checked });
+  const post = (url, data = {}) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(r => r.json());
   function addItems(items) {
+    if (API) return post('/api/jobs', { ...clientOpts(), items: items.map(i => ({ url: i.url, title: i.title })) }).then(r => { if (!r.ids || !r.ids.length) toast('Tidak ada URL valid yang ditambahkan'); });
     items.forEach(it => {
       const h = HUES[uid % HUES.length];
       queue.push({ id: ++uid, title: it.title || 'Video ' + uid + ' — ' + it.name, name: it.name, color: it.color, fmt, ext, q: Q[fmt][$('#qRange').value],
@@ -158,7 +164,7 @@
     $('#qBadge').textContent = queue.filter(i => i.status !== 'done').length;
     $('#queueEmpty').hidden = queue.length > 0;
     $('#queueList').innerHTML = queue.map(i => {
-      const label = { wait: 'Menunggu', run: `${i.speed.toFixed(1)} MB/s · ETA ${Math.max(1, Math.round((100 - i.pct) / 100 * i.size / Math.max(i.speed, .1)))}s`, paused: 'Dijeda', done: 'Selesai', error: 'Gagal' }[i.status];
+      const label = { wait: 'Menunggu', run: i.stage === 'convert' ? 'Mengonversi…' : i.stage === 'info' ? 'Mengambil info…' : `${i.speed.toFixed(1)} MB/s · ETA ${i.eta ?? Math.max(1, Math.round((100 - i.pct) / 100 * i.size / Math.max(i.speed, .1)))}s`, paused: 'Dijeda', done: 'Selesai', error: 'Gagal' + (i.error ? ': ' + esc(i.error).slice(0, 90) : '') }[i.status];
       return `<article class="glass item ${i.status === 'run' ? '' : i.status}" data-id="${i.id}">
         <div class="thumb" style="--h1:${i.h1};--h2:${i.h2}">${i.fmt === 'mp3' ? '♪' : '▶'}</div>
         <div class="meta"><h4>${i.num ? String(i.num).padStart(2, '0') + ' · ' : ''}${esc(i.title)}</h4>
@@ -179,18 +185,25 @@
   $('#queueList').onclick = e => {
     const b = e.target.closest('button'); if (!b) return;
     const it = queue.find(i => i.id == b.closest('.item').dataset.id); if (!it) return;
+    if (API) {
+      const a = { del: 'cancel', retry: 'retry', pause: it.status === 'paused' ? 'resume' : 'pause' }[b.dataset.a];
+      return post(`/api/jobs/${it.id}/${a}`);
+    }
     if (b.dataset.a === 'del') queue = queue.filter(i => i !== it);
     if (b.dataset.a === 'pause') it.status = it.status === 'paused' ? 'wait' : 'paused';
     if (b.dataset.a === 'retry') { it.status = 'wait'; it.pct = 0; }
     renderQueue();
   };
   $('#pauseAll').onclick = () => {
-    allPaused = !allPaused; $('#pauseAll').textContent = allPaused ? '▶ Lanjutkan semua' : '⏸ Jeda semua';
+    allPaused = !allPaused;
+    if (API) { queue.forEach(i => { if (i.status === 'done') return; post(`/api/jobs/${i.id}/${allPaused ? 'pause' : 'resume'}`); }); $('#pauseAll').textContent = allPaused ? '▶ Lanjutkan semua' : '⏸ Jeda semua'; return; }
+     $('#pauseAll').textContent = allPaused ? '▶ Lanjutkan semua' : '⏸ Jeda semua';
     queue.forEach(i => { if (i.status === 'done') return; i.status = allPaused ? 'paused' : 'wait'; }); renderQueue();
   };
-  $('#clearDone').onclick = () => { queue = queue.filter(i => i.status !== 'done'); renderQueue(); };
+  $('#clearDone').onclick = () => { if (API) post('/api/clear-done'); queue = queue.filter(i => i.status !== 'done'); renderQueue(); };
 
   setInterval(() => {
+    if (API) return;
     const max = +$('#par').value; let running = queue.filter(i => i.status === 'run').length;
     queue.forEach(i => { if (i.status === 'wait' && running < max) { i.status = 'run'; running++; } });
     queue.filter(i => i.status === 'run').forEach(i => {
@@ -219,12 +232,8 @@
   renderHistory();
 
   /* ---------- playlist import (simulation) ---------- */
-  $('#plBtn').onclick = () => {
-    const d = detect($('#plUrl').value);
-    if (!d) return toast('Masukkan URL playlist/channel yang valid');
-    const n = 8 + Math.floor(Math.random() * 8);
-    const items = Array.from({ length: n }, (_, i) => ({ title: `${d.name} Playlist — Video ${i + 1}`, dur: `${1 + (i * 7) % 9}:${String((i * 13) % 60).padStart(2, '0')}`, name: d.name, color: d.color }));
-    const box = $('#plResult'); box.hidden = false;
+  function showPlaylist(items, d) {
+    const box = $('#plResult'); box.hidden = false; const n = items.length;
     box.innerHTML = `<div class="pl-actions"><label class="switch"><input type="checkbox" id="plAll" checked><i></i><span>Pilih semua (${n})</span></label><button class="btn secondary sm" id="plAdd">Tambah ke antrian</button></div>` +
       items.map((it, i) => `<label class="pl-item"><input type="checkbox" checked data-i="${i}"><span>${esc(it.title)}</span><span class="dur">${it.dur}</span></label>`).join('');
     $('#plAll').onchange = e => $$('.pl-item input', box).forEach(c => c.checked = e.target.checked);
@@ -233,7 +242,38 @@
       if (!sel.length) return toast('Pilih minimal satu video');
       addItems(sel); toast(`${sel.length} video ditambahkan`); go('queue');
     };
+  }
+  const mmss = s => s ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}` : '';
+  $('#plBtn').onclick = async () => {
+    const d = detect($('#plUrl').value);
+    if (!d) return toast('Masukkan URL playlist/channel yang valid');
+    if (API) {
+      $('#plBtn').disabled = true; $('#plBtn').textContent = 'Mengambil…';
+      try { const r = await post('/api/playlist', { url: d.url }); if (r.error) throw new Error(r.error); showPlaylist(r.items.map(i => ({ ...i, dur: mmss(i.dur) })), d); }
+      catch (e) { toast('Gagal: ' + e.message); }
+      $('#plBtn').disabled = false; $('#plBtn').textContent = 'Ambil Daftar'; return;
+    }
+    const n = 8 + Math.floor(Math.random() * 8);
+    const items = Array.from({ length: n }, (_, i) => ({ title: `${d.name} Playlist — Video ${i + 1}`, dur: `${1 + (i * 7) % 9}:${String((i * 13) % 60).padStart(2, '0')}`, name: d.name, color: d.color }));
+    showPlaylist(items, d);
   };
+
+  /* ---------- backend connection ---------- */
+  const seenDone = new Set();
+  function onJobs(list) {
+    queue = list.map(v => { const h = HUES[v.id % HUES.length]; return { id: v.id, title: v.title || v.url, name: v.site, fmt: v.fmt, ext: v.ext, q: v.q, size: v.size || 0, pct: v.pct, speed: v.speed, eta: v.eta,
+      status: { wait: 'wait', run: 'run', paused: 'paused', done: 'done', error: 'error' }[v.status], stage: v.status === 'run' ? (v.pct >= 70 ? 'convert' : v.pct > 0 || v.size ? 'download' : 'info') : '', error: v.error, num: v.num, h1: h[0], h2: h[1] }; });
+    queue.forEach(i => { if (i.status === 'done' && !seenDone.has(i.id)) { seenDone.add(i.id); history.unshift({ title: i.title, name: i.name, fmt: i.fmt, ext: i.ext, q: i.q, size: i.size, at: new Date().toISOString(), h1: i.h1, h2: i.h2 }); history = history.slice(0, 200); store.set('history', history); renderHistory(); } });
+    renderQueue();
+  }
+  fetch('/api/health').then(r => r.json()).then(h => {
+    if (!h.ok) return; API = true;
+    if (!h.ytdlp || !h.ffmpeg) toast('Backend aktif, tapi ' + [!h.ytdlp && 'yt-dlp', !h.ffmpeg && 'ffmpeg'].filter(Boolean).join(' & ') + ' belum terpasang');
+    $('#dest').value = 'Downloads/NovaGrab'; $('#dest').title = 'Folder dasar: ' + h.base + ' (isi subfolder opsional setelah Downloads/NovaGrab/)';
+    $('footer').textContent = 'NovaGrab · Backend aktif — file disimpan di ' + h.base + '. Hanya unduh konten milik Anda atau yang berizin.';
+    post('/api/settings', { parallel: +$('#par').value });
+    evt = new EventSource('/api/events'); evt.onmessage = e => onJobs(JSON.parse(e.data));
+  }).catch(() => {});
 
   parse();
 })();
