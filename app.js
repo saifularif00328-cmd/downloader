@@ -93,6 +93,7 @@
     mp4: [['mp4', 'MP4 (H.264) — universal'], ['mkv', 'MKV'], ['webm', 'WebM'], ['avi', 'AVI (MPEG-4) — perangkat lawas'], ['mpg', 'MPEG-1/2 — DVD player & head unit'], ['wmv', 'WMV'], ['3gp', '3GP — HP jadul'], ['flv', 'FLV']],
     mp3: [['mp3', 'MP3 — paling kompatibel'], ['m4a', 'M4A / AAC'], ['wma', 'WMA — head unit lawas'], ['wav', 'WAV (lossless)'], ['flac', 'FLAC (lossless)'], ['ogg', 'OGG Vorbis'], ['opus', 'Opus']]
   };
+  if (window.AndroidBridge) { EXT.mp4 = EXT.mp4.slice(0, 1); EXT.mp3 = EXT.mp3.slice(0, 1); $('#presets').closest('.field').style.display = 'none'; } // APK: hanya MP4 & MP3
   // idx kualitas mengacu ke Q[kind]: mp4 [360p,480p,720p,1080p,1440p,4K], mp3 [64k..320k]
   const PRESETS = [
     ['🚗 Head unit (terbukti jalan)', 'mp4', 'mpg', 1, 'MPEG-2 DVD NTSC: 720×480, 29,97 fps, video 9000 kbps, audio 448 kbps 48 kHz stereo. Setara ffmpeg -target ntsc-dvd. Cocok dengan file .mpg yang sudah terbaca di head unit kamu.'],

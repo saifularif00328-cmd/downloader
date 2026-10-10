@@ -21,3 +21,9 @@ Unduh hanya konten milik Anda atau yang berizin.
 ## Versi .exe (Windows)
 Bangun sendiri: `npm run build:exe` → `dist/Downloader-Josjis.exe`. Atau jalankan workflow *Build Downloader-Josjis.exe* di tab Actions.
 Letakkan `yt-dlp.exe` (dan `ffmpeg.exe` bila belum ada di PATH) di folder yang sama dengan `Downloader-Josjis.exe`, lalu klik dua kali. Browser terbuka otomatis; tutup jendela hitam untuk berhenti.
+
+## Versi Android (APK)
+Mandiri: yt-dlp + ffmpeg tertanam di app (hanya MP4 & MP3). Kode di folder `android/`.
+Build lewat GitHub Actions → *Build Android APK* → unduh artifact `Josjis-apk`
+(pasang `app-arm64-v8a-debug.apk` untuk HP modern, `armeabi-v7a` untuk HP lama).
+File tersimpan di `Download/Josjis`. Build lokal: `./android/prepare-assets.sh && gradle -p android assembleDebug` (butuh Android SDK + JDK 17).

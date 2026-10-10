@@ -2,3 +2,9 @@ node_modules/
 downloads/
 .DS_Store
 dist/
+android/app/src/main/assets/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.apk
